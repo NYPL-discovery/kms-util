@@ -11,9 +11,18 @@ cd ~/bin
 git clone git://github.com/NYPL-discovery/kms-util
 ```
 
-### 2. Make sure the binary is in your path, e.g.:
+### 2. Make sure the binary is in your path
+
+If using BASH:
 ```
 echo "export PATH=\$PATH:~/bin/kms-util" >> ~/.bash_profile
+source ~/.bash_profile
+```
+
+If using ZSH:
+```
+echo "export PATH=\$PATH:~/bin/kms-util" >> ~/.zshrc
+source ~/.zshrc
 ```
 
 ## Usage
