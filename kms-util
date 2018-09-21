@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Encrypt/Decrypt values using AWS KMS
+# Usage:
+# 
+#   kms (encrypt|decrypt) VALUE [--profile PROFILE]
+# Or:
+#   echo VALUE | kms (encrypt|decrypt) [--profile PROFILE]
+#
+# PROFILE must be be nypl-sandbox or nypl-digital-dev (default)
+
+PROFILE=nypl-digital-dev
+
+# Parse option:
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -p|--profile)
+    PROFILE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+INPUT=$2
+
+# Read from stdin if not given inline:
+if [ -z "$INPUT" ]; then
+  read INPUT
+fi
+
+KEY_ID=alias/lambda-rds
+if [ "$PROFILE" == "nypl-digital-dev" ]; then KEY_ID=alias/lambda-default; fi
+
+if [ "$1" == "encrypt" ]
+then
+  >&2 echo Encrypting with profile: $PROFILE
+  if [[ $INPUT == http* ]]; then
+    >&2 echo "Interpretting input as http* URL; Encrypted value may include \r\n when decrypted"
+    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext fileb://<( echo "$INPUT"))
+  else
+    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext $INPUT)
+  fi
+
+  echo $RESULT
+
+elif [ "$1" == "decrypt" ]
+then
+  >&2 echo Decrypting with profile: $PROFILE
+  # Set field split char to null to prevent stripping delimiters
+  # (specifically \n):
+  IFS=
+  RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms decrypt --profile $PROFILE --query Plaintext --output text --ciphertext-blob fileb://<(echo "$INPUT" | base64 --decode) | base64 --decode)
+
+  echo $RESULT
+
+  # Address the problem where the encrypted value has a terminating newline
+  # which command substitution may strip out.
+  HAS_NEWLINES=$(AWS_DEFAULT_REGION=us-east-1 aws kms decrypt --profile $PROFILE --query Plaintext --output text --ciphertext-blob fileb://<(echo "$INPUT" | base64 --decode) | base64 --decode | wc -l)
+  if ! [[ "$HAS_NEWLINES" -eq "0" ]]; then
+    >&2 echo "******************"
+    >&2 echo "* Newlines detected. BASH command substitution tends to strip trailing newlines."
+    >&2 echo "* To determine the full, complete decrypted value, run this manually:"
+    >&2 echo "*   AWS_DEFAULT_REGION=us-east-1 aws kms decrypt --profile $PROFILE --query Plaintext --output text --ciphertext-blob fileb://<(echo "$INPUT" | base64 --decode) | base64 --decode"
+    >&2 echo "******************"
+  fi
+else
+  >&2 echo "Usage: kms (encrypt|decrypt) VALUE [--profile PROFILE]"
+fi
