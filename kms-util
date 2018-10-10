@@ -33,28 +33,38 @@ set -- "${POSITIONAL[@]}" # restore positional parameters
 
 INPUT=$2
 
-# Read from stdin if not given inline:
-if [ -z "$INPUT" ]; then
-  read INPUT
-fi
-
 KEY_ID=alias/lambda-rds
 if [ "$PROFILE" == "nypl-digital-dev" ]; then KEY_ID=alias/lambda-default; fi
 
 if [ "$1" == "encrypt" ]
 then
+  if [ -z "$INPUT" ]; then
+    # Read multi-line input (e.g. from clipboard or cat'ing a file)
+    IFS= read -d '' -n 1 INPUT
+    while IFS= read -d '' -n 1 -t 1 c
+    do
+      INPUT+=$c
+    done
+  fi
+
   >&2 echo Encrypting with profile: $PROFILE
   if [[ $INPUT == http* ]]; then
     >&2 echo "Interpretting input as http* URL; Encrypted value may include \r\n when decrypted"
     RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext fileb://<( echo "$INPUT"))
   else
-    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext $INPUT)
+    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext "$INPUT")
   fi
 
   echo $RESULT
 
 elif [ "$1" == "decrypt" ]
 then
+
+  # Read from stdin if not given inline:
+  if [ -z "$INPUT" ]; then
+    read INPUT
+  fi
+
   >&2 echo Decrypting with profile: $PROFILE
   # Set field split char to null to prevent stripping delimiters
   # (specifically \n):
