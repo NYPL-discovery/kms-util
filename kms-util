@@ -45,6 +45,8 @@ then
     do
       INPUT+=$c
     done
+    # Strip trailing newline because in all likelihood it's unwanted
+    INPUT=$(echo $INPUT | tr -d '\n')
   fi
 
   >&2 echo Encrypting with profile: $PROFILE
