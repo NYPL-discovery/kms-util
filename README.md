@@ -71,6 +71,25 @@ To effectively change the encryption of the contents of your clipboard from prof
 pbpaste | kms-util decrypt | kms-util encrypt --profile nypl-sandbox | pbcopy
 ```
 
+### Mutli-line input
+
+Multi-line input support is experimental.
+
+Suppose you have a multi-line YAML file:
+
+```
+echo "multi:
+  line:
+  - thing
+" > example.yml
+```
+
+You can decrypt the whole thing like this:
+
+```
+cat example.yml | kms-util encrypt
+```
+
 ### Encrypt
 
 This will encrypt `VALUE` using 'nypl-digital-dev' (or the given profile) and print it:
