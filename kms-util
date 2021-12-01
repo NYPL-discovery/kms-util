@@ -54,7 +54,7 @@ then
     >&2 echo "Interpretting input as http* URL; Encrypted value may include \r\n when decrypted"
     RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext fileb://<( echo "$INPUT"))
   else
-    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext "$INPUT")
+    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext "$INPUT" --cli-binary-format raw-in-base64-out)
   fi
 
   echo $RESULT
