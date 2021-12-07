@@ -2,6 +2,18 @@
 
 This is a tiny utility for encrypting & decrypting things using using [NYPL conventions](https://github.com/NYPL/engineering-general/blob/master/security/secrets.md).
 
+It lets you do things like this:
+
+1. Decrypt the contents of your clipboard and print it to screen:
+```
+pbpaste | kms-util decrypt
+```
+
+2. Encrypt the contents of your clipboard "in place":
+```
+pbpaste | kms-util encrypt | pbcopy
+```
+
 ## Installation
 
 ### 1. Clone this repo somwhere sensible, e.g.:
