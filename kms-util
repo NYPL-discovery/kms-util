@@ -51,8 +51,7 @@ then
 
   >&2 echo Encrypting with profile: $PROFILE
   if [[ $INPUT == http* ]]; then
-    >&2 echo "Interpretting input as http* URL; Encrypted value may include \r\n when decrypted"
-    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext fileb://<( echo "$INPUT"))
+    RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext fileb://<( echo -n "$INPUT"))
   else
     RESULT=$(AWS_DEFAULT_REGION=us-east-1 aws kms encrypt --key-id $KEY_ID --profile $PROFILE --query CiphertextBlob --output text --plaintext "$INPUT" --cli-binary-format raw-in-base64-out)
   fi
